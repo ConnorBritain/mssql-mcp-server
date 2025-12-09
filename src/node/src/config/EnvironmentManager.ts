@@ -127,7 +127,7 @@ export class EnvironmentManager {
         this.environments.set(resolvedEnv.name, resolvedEnv);
       }
 
-      console.error(`Loaded ${this.environments.size} environment(s) from ${resolvedPath}`);
+      console.log(`Loaded ${this.environments.size} environment(s) from ${resolvedPath}`);
     } catch (error) {
       console.error(`Failed to load environment config: ${error}`);
       this.loadFromEnvVars();
@@ -163,7 +163,7 @@ export class EnvironmentManager {
 
     this.environments.set("default", defaultEnv);
     this.defaultEnvironment = "default";
-    console.error("Loaded default environment from environment variables");
+    console.log("Loaded default environment from environment variables");
   }
 
   getEnvironment(name?: string): EnvironmentConfig {
@@ -395,7 +395,7 @@ export class EnvironmentManager {
     for (const [name, { pool }] of this.connections.entries()) {
       if (pool.connected) {
         await pool.close();
-        console.error(`Closed connection for environment '${name}'`);
+        console.log(`Closed connection for environment '${name}'`);
       }
     }
     this.connections.clear();

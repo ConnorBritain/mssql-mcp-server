@@ -17,6 +17,7 @@ export interface EnvironmentConfig {
   username?: string;
   password?: string;
   domain?: string;
+  encrypt?: boolean;
   trustServerCertificate?: boolean;
   connectionTimeout?: number;
 
@@ -80,6 +81,14 @@ function resolveSecretsInConfig<T extends Record<string, any>>(config: T): T {
   return resolved;
 }
 
+const parseBool = (value: string | undefined, defaultValue: boolean): boolean => {
+  if (value === undefined) return defaultValue;
+  const normalized = value.toString().trim().toLowerCase();
+  if (["true", "1", "yes"].includes(normalized)) return true;
+  if (["false", "0", "no"].includes(normalized)) return false;
+  return defaultValue;
+};
+
 export class EnvironmentManager {
   private readonly environments: Map<string, EnvironmentConfig>;
   private defaultEnvironment?: string;
@@ -118,7 +127,7 @@ export class EnvironmentManager {
         this.environments.set(resolvedEnv.name, resolvedEnv);
       }
 
-      console.log(`Loaded ${this.environments.size} environment(s) from ${resolvedPath}`);
+      console.error(`Loaded ${this.environments.size} environment(s) from ${resolvedPath}`);
     } catch (error) {
       console.error(`Failed to load environment config: ${error}`);
       this.loadFromEnvVars();
@@ -144,7 +153,8 @@ export class EnvironmentManager {
       username: process.env.SQL_USERNAME,
       password: process.env.SQL_PASSWORD,
       domain: process.env.SQL_DOMAIN,
-      trustServerCertificate: process.env.TRUST_SERVER_CERTIFICATE?.toLowerCase() === "true",
+      encrypt: parseBool(process.env.SQL_ENCRYPT ?? process.env.ENCRYPT, true),
+      trustServerCertificate: parseBool(process.env.TRUST_SERVER_CERTIFICATE, false),
       connectionTimeout: process.env.CONNECTION_TIMEOUT
         ? parseInt(process.env.CONNECTION_TIMEOUT, 10)
         : 30,
@@ -153,7 +163,7 @@ export class EnvironmentManager {
 
     this.environments.set("default", defaultEnv);
     this.defaultEnvironment = "default";
-    console.log("Loaded default environment from environment variables");
+    console.error("Loaded default environment from environment variables");
   }
 
   getEnvironment(name?: string): EnvironmentConfig {
@@ -318,7 +328,7 @@ export class EnvironmentManager {
           user: env.username,
           password: env.password,
           options: {
-            encrypt: false,
+            encrypt: env.encrypt ?? true,
             trustServerCertificate: env.trustServerCertificate ?? false,
           },
         },
@@ -336,7 +346,7 @@ export class EnvironmentManager {
         config: {
           ...baseConfig,
           options: {
-            encrypt: false,
+            encrypt: env.encrypt ?? true,
             trustServerCertificate: env.trustServerCertificate ?? false,
           },
           authentication: {
@@ -365,7 +375,7 @@ export class EnvironmentManager {
       config: {
         ...baseConfig,
         options: {
-          encrypt: true,
+          encrypt: env.encrypt ?? true,
           trustServerCertificate: env.trustServerCertificate ?? false,
         },
         authentication: {
@@ -385,7 +395,7 @@ export class EnvironmentManager {
     for (const [name, { pool }] of this.connections.entries()) {
       if (pool.connected) {
         await pool.close();
-        console.log(`Closed connection for environment '${name}'`);
+        console.error(`Closed connection for environment '${name}'`);
       }
     }
     this.connections.clear();

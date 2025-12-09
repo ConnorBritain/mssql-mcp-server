@@ -1,6 +1,11 @@
 #!/usr/bin/env node
 
 // External imports
+// Keep MCP stdio JSON clean by sending logs to stderr
+const origError = console.error.bind(console);
+console.log = origError;
+console.info = origError;
+console.warn = origError;
 import { Buffer } from "node:buffer";
 import * as dotenv from "dotenv";
 import sql from "mssql";

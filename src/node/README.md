@@ -59,6 +59,8 @@ npm install -g @connorbritain/mssql-mcp-server@latest
 | `DATABASE_NAME` | Yes | Target database |
 | `SQL_AUTH_MODE` | | `sql`, `windows`, or `aad` (default: `aad`) |
 | `SQL_USERNAME` / `SQL_PASSWORD` | | Required for `sql`/`windows` modes |
+| `SQL_ENCRYPT` | | `true`/`false` (default: `true`). Azure SQL / Synapse require encryption. |
+| `TRUST_SERVER_CERTIFICATE` | | `true`/`false` (default: `false`) |
 | `READONLY` | | `true` disables write tools |
 | `ENVIRONMENTS_CONFIG_PATH` | | Multi-environment JSON config |
 | `SCRIPTS_PATH` | | Named SQL scripts directory |

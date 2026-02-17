@@ -40,7 +40,7 @@ export class CreateIndexTool implements Tool {
       }
       const columnNames = columns.join(", ");
 
-      const request = new sql.Request();
+      const request = new sql.Request(params.pool);
       const query = `CREATE ${indexType} INDEX ${indexName} ON ${schemaName}.${tableName} (${columnNames})`;
       await request.query(query);
       

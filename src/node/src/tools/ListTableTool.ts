@@ -44,7 +44,7 @@ export class ListTableTool implements Tool {
         }
       }
 
-      const request = new sql.Request();
+      const request = new sql.Request(params.pool);
       const schemaFilter =
         schemas && schemas.length > 0
           ? `AND TABLE_SCHEMA IN (${schemas.map((p: string) => `'${p.replace(/'/g, "''")}'`).join(", ")})`

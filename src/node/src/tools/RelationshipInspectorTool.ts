@@ -76,8 +76,8 @@ export class RelationshipInspectorTool implements Tool {
     return typeof value === "boolean" ? value : fallback;
   }
 
-  private async ensureTableExists(schemaName: string, tableName: string) {
-    const request = new sql.Request();
+  private async ensureTableExists(schemaName: string, tableName: string, pool?: any) {
+    const request = new sql.Request(pool);
     request.input("schemaName", sql.NVarChar, schemaName);
     request.input("tableName", sql.NVarChar, tableName);
     const result = await request.query(`
@@ -111,8 +111,8 @@ export class RelationshipInspectorTool implements Tool {
     }));
   }
 
-  private async fetchRelationships(schemaName: string, tableName: string, direction: "outbound" | "inbound") {
-    const request = new sql.Request();
+  private async fetchRelationships(schemaName: string, tableName: string, direction: "outbound" | "inbound", pool?: any) {
+    const request = new sql.Request(pool);
     request.input("schemaName", sql.NVarChar, schemaName);
     request.input("tableName", sql.NVarChar, tableName);
 
@@ -174,7 +174,8 @@ export class RelationshipInspectorTool implements Tool {
         };
       }
 
-      const tableExists = await this.ensureTableExists(schemaName, tableName);
+      const pool = (params as any).pool;
+      const tableExists = await this.ensureTableExists(schemaName, tableName, pool);
       if (!tableExists) {
         return {
           success: false,
@@ -183,8 +184,8 @@ export class RelationshipInspectorTool implements Tool {
       }
 
       const [outbound, inbound] = await Promise.all([
-        includeOutbound ? this.fetchRelationships(schemaName, tableName, "outbound") : Promise.resolve([]),
-        includeInbound ? this.fetchRelationships(schemaName, tableName, "inbound") : Promise.resolve([]),
+        includeOutbound ? this.fetchRelationships(schemaName, tableName, "outbound", pool) : Promise.resolve([]),
+        includeInbound ? this.fetchRelationships(schemaName, tableName, "inbound", pool) : Promise.resolve([]),
       ]);
 
       if ((!outbound || outbound.length === 0) && (!inbound || inbound.length === 0)) {

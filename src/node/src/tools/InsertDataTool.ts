@@ -51,7 +51,7 @@ export class InsertDataTool implements Tool {
         }
       }
       const columns = firstRecordColumns.join(", ");
-      const request = new sql.Request();
+      const request = new sql.Request(params.pool);
       if (isMultipleRecords) {
         // Multiple records insert using VALUES clause - works for 1 or more records
         const valueClauses: string[] = [];

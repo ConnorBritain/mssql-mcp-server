@@ -861,18 +861,16 @@ function wrapToolRun(tool: { name: string; run: (...args: any[]) => Promise<any>
       }
     }
 
-    // Enrich args with environment info and policy
+    // Get connection for the specified or default environment
+    const pool = await environmentManager.getConnection(policy.name);
+
+    // Enrich args with environment info, policy, and connection pool
     const toolArgs = {
       ...rawArgs,
       environment: policy.name,
       environmentPolicy: policy,
+      pool,
     };
-
-    // Get connection for the specified or default environment
-    const pool = await environmentManager.getConnection(policy.name);
-
-    // Store the pool in global sql for tools that use sql directly
-    (sql as any).globalPool = pool;
 
     try {
       const result = await originalRun(toolArgs);

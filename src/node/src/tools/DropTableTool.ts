@@ -21,7 +21,7 @@ export class DropTableTool implements Tool {
         throw new Error("Invalid table name.");
       }
       const query = `DROP TABLE [${tableName}]`;
-      await new sql.Request().query(query);
+      await new sql.Request(params.pool).query(query);
       return {
         success: true,
         message: `Table '${tableName}' dropped successfully.`

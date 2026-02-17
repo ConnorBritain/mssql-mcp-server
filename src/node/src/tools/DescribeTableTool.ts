@@ -49,7 +49,7 @@ export class DescribeTableTool implements Tool {
         actualTableName = parts[1];
       }
 
-      const request = new sql.Request();
+      const request = new sql.Request((params as any).pool);
 
       // Build query with optional database context
       let query: string;

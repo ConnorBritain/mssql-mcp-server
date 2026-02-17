@@ -320,7 +320,7 @@ export class ReadDataTool implements Tool {
       );
 
       // Execute the query
-      const request = new sql.Request();
+      const request = new sql.Request(params.pool);
       const result = await request.query(finalQuery);
 
       // Sanitize the result

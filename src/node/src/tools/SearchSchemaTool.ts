@@ -151,8 +151,8 @@ export class SearchSchemaTool implements Tool {
     return 1 - distance / maxLength;
   }
 
-  private async findSimilarTables(searchTerm: string, maxSuggestions: number) {
-    const request = new sql.Request();
+  private async findSimilarTables(searchTerm: string, maxSuggestions: number, pool?: any) {
+    const request = new sql.Request(pool);
     const result = await request.query(`
       SELECT TABLE_SCHEMA AS schemaName, TABLE_NAME AS tableName
       FROM INFORMATION_SCHEMA.TABLES
@@ -193,12 +193,13 @@ export class SearchSchemaTool implements Tool {
         };
       }
 
-      const tablesRequest = new sql.Request();
+      const pool = (params as any).pool;
+      const tablesRequest = new sql.Request(pool);
       tablesRequest.input("tablePattern", sql.NVarChar, tablePattern);
       tablesRequest.input("tableOffset", sql.Int, tableOffset);
       tablesRequest.input("tablesLimit", sql.Int, tableLimit);
 
-      const columnsRequest = new sql.Request();
+      const columnsRequest = new sql.Request(pool);
       columnsRequest.input("tablePattern", sql.NVarChar, tablePattern);
       columnsRequest.input("columnPattern", sql.NVarChar, columnPattern);
       columnsRequest.input("columnOffset", sql.Int, columnOffset);
@@ -281,7 +282,7 @@ export class SearchSchemaTool implements Tool {
       );
 
       if (needsFuzzyTables && rawTableSearch) {
-        const fuzzySuggestions = await this.findSimilarTables(rawTableSearch, 10);
+        const fuzzySuggestions = await this.findSimilarTables(rawTableSearch, 10, pool);
         if (fuzzySuggestions.length) {
           response.fuzzySuggestions = fuzzySuggestions;
           response.fuzzySearchTerm = rawTableSearch;

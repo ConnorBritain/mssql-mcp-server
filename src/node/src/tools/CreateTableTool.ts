@@ -33,7 +33,7 @@ export class CreateTableTool implements Tool {
       }
       const columnDefs = columns.map((col: any) => `[${col.name}] ${col.type}`).join(", ");
       const query = `CREATE TABLE [${tableName}] (${columnDefs})`;
-      await new sql.Request().query(query);
+      await new sql.Request(params.pool).query(query);
       return {
         success: true,
         message: `Table '${tableName}' created successfully.`

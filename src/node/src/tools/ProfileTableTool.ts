@@ -219,6 +219,7 @@ export class ProfileTableTool implements Tool {
 
   async run(params: ProfileParams): Promise<ProfileResult> {
     try {
+      const pool = (params as any).pool;
       const tableName = params.tableName?.trim();
       if (!tableName) {
         return { success: false, message: "tableName is required." };
@@ -232,7 +233,7 @@ export class ProfileTableTool implements Tool {
       const columnsToProfile = params.columnsToProfile?.map((c) => c.trim()).filter(Boolean);
 
       // 1. Validate table exists and get columns
-      const metaRequest = new sql.Request();
+      const metaRequest = new sql.Request(pool);
       metaRequest.input("schemaName", sql.NVarChar, schemaName);
       metaRequest.input("tableName", sql.NVarChar, tableName);
 
@@ -272,7 +273,7 @@ export class ProfileTableTool implements Tool {
       columns = columns.filter((c) => !this.shouldSkipType(c.dataType));
 
       // 2. Get total row count
-      const countRequest = new sql.Request();
+      const countRequest = new sql.Request(pool);
       const fqTable = `${this.escapeIdentifier(schemaName)}.${this.escapeIdentifier(tableName)}`;
       const countResult = await countRequest.query(`SELECT COUNT(*) AS cnt FROM ${fqTable}`);
       const rowCount = countResult.recordset[0]?.cnt ?? 0;
@@ -300,7 +301,7 @@ export class ProfileTableTool implements Tool {
       }
 
       if (includeSamples) {
-        const sampleRequest = new sql.Request();
+        const sampleRequest = new sql.Request(pool);
         const sampleQuery = `
           SELECT TOP (${sampleSize}) *
           FROM ${fqTable}
@@ -326,7 +327,7 @@ export class ProfileTableTool implements Tool {
         };
 
         // Base stats: null count and distinct count
-        const baseRequest = new sql.Request();
+        const baseRequest = new sql.Request(pool);
         const baseResult = await baseRequest.query(`
           SELECT 
             SUM(CASE WHEN ${colName} IS NULL THEN 1 ELSE 0 END) AS nullCount,
@@ -342,7 +343,7 @@ export class ProfileTableTool implements Tool {
 
         // Type-specific stats
         if (this.isNumericType(col.dataType)) {
-          const numRequest = new sql.Request();
+          const numRequest = new sql.Request(pool);
           const numResult = await numRequest.query(`
             SELECT 
               MIN(${colName}) AS minVal,
@@ -359,7 +360,7 @@ export class ProfileTableTool implements Tool {
               avg: Number(Number(numRow.avgVal).toFixed(4)),
             };
 
-            const percentileRequest = new sql.Request();
+            const percentileRequest = new sql.Request(pool);
             const percentileResult = await percentileRequest.query(`
               SELECT TOP 1
                 PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY ${colName}) OVER () AS medianVal,
@@ -378,7 +379,7 @@ export class ProfileTableTool implements Tool {
             }
           }
         } else if (this.isStringType(col.dataType)) {
-          const strRequest = new sql.Request();
+          const strRequest = new sql.Request(pool);
           const strResult = await strRequest.query(`
             SELECT 
               MIN(LEN(${colName})) AS minLength,
@@ -398,7 +399,7 @@ export class ProfileTableTool implements Tool {
             };
           }
         } else if (this.isDateType(col.dataType)) {
-          const dateRequest = new sql.Request();
+          const dateRequest = new sql.Request(pool);
           const dateResult = await dateRequest.query(`
             SELECT 
               MIN(${colName}) AS earliest,
@@ -420,7 +421,7 @@ export class ProfileTableTool implements Tool {
 
         // Top values distribution
         if (includeDistributions && profile.distinctCount > 0 && profile.distinctCount <= rowCount) {
-          const topRequest = new sql.Request();
+          const topRequest = new sql.Request(pool);
           topRequest.input("topLimit", sql.Int, topValuesLimit);
           const topResult = await topRequest.query(`
             SELECT TOP (@topLimit)

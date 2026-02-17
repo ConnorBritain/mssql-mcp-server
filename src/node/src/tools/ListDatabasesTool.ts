@@ -44,7 +44,7 @@ export class ListDatabasesTool implements Tool {
         };
       }
 
-      const request = new sql.Request();
+      const request = new sql.Request(params.pool);
 
       // Build the query
       let query = `

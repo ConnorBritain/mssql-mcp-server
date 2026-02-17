@@ -56,7 +56,7 @@ export class UpdateDataTool implements Tool {
 
       // Step 1: Get count of affected rows
       const countQuery = `SELECT COUNT(*) as affectedRows FROM ${tableName} WHERE ${whereClause}`;
-      const countRequest = new sql.Request();
+      const countRequest = new sql.Request(params.pool);
       const countResult = await countRequest.query(countQuery);
       const affectedRows = countResult.recordset[0].affectedRows;
 
@@ -82,7 +82,7 @@ export class UpdateDataTool implements Tool {
       // Step 2: Show preview if not confirmed
       if (!confirmUpdate) {
         const previewQuery = `SELECT TOP 10 * FROM ${tableName} WHERE ${whereClause}`;
-        const previewRequest = new sql.Request();
+        const previewRequest = new sql.Request(params.pool);
         const previewResult = await previewRequest.query(previewQuery);
 
         return {
@@ -97,7 +97,7 @@ export class UpdateDataTool implements Tool {
       }
 
       // Step 3: Execute the update
-      const request = new sql.Request();
+      const request = new sql.Request(params.pool);
       
       // Build SET clause with parameterized queries for security
       const setClause = Object.keys(updates)

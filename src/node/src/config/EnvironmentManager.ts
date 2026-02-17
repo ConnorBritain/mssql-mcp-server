@@ -277,7 +277,8 @@ export class EnvironmentManager {
       await cached.pool.close();
     }
 
-    const pool = await sql.connect(config);
+    const pool = new sql.ConnectionPool(config);
+    await pool.connect();
     this.connections.set(env.name, { pool, expiresOn });
 
     return pool;

@@ -41,10 +41,14 @@ Scoring legend:
 
 - **Description**: Connect to SQL via connection strings that pull credentials from secure stores instead of plain text.
 - **Why**: Non-starter for most enterprises if credentials are in config files or editor settings.
-- **Status**: ✅ Implemented – `${secret:NAME}` syntax in environment configs auto-resolves from environment variables. Credential security documentation added to README with example loader scripts for various secret stores.
+- **Status**: ✅ Implemented – Pluggable `SecretResolver` with configurable provider chain (`env`, `dotenv`, `file`). `${secret:NAME}` placeholders in environment configs resolve through ordered providers. `validate_environment_config` checks provider health and secret resolvability.
 - **Key capabilities**:
   - ✅ Support for environment-variable-based secrets via `${secret:NAME}` syntax.
-  - 🚧 Design-ready hooks for external secret stores (Key Vault, Vault, etc.) – pluggable provider system planned.
+  - ✅ Pluggable provider system: `env` (process.env), `dotenv` (reads .env files directly), `file` (reads named files from a directory).
+  - ✅ Provider chain configured via `secrets.providers` in environments.json; first match wins.
+  - ✅ `DOTENV_PATH` env var fallback for zero-config .env support.
+  - ✅ `validate_environment_config` validates provider configs and reports unresolvable secrets.
+  - 🚧 Phase 2 async providers (Azure Key Vault, AWS Secrets Manager) planned.
   - ✅ Clear guidance/README on NOT checking secrets into the repo.
 - **Score**: V=5, C=3, F=4, M=5 → **Overall Priority: P0** ✅ **Complete (Phase 1)**
 
@@ -360,17 +364,17 @@ This could evolve into a **centralized MCP management platform** - a potential p
 | **Multi-DB Access** | ✅ Complete | Server-level access, `list_databases`, cross-DB queries |
 | **Safe Writes** | ✅ Complete | Preview, confirmation, row limits |
 | **Authentication** | ✅ Complete | SQL, Windows/NTLM, Azure AD |
-| **Secrets** | ✅ Complete | `${secret:NAME}` resolution from env vars |
+| **Secrets** | ✅ Complete | Pluggable providers (`env`, `dotenv`, `file`) with validation |
 | **Audit Logging** | ✅ Complete | JSON Lines, per-environment levels, redaction |
 | **Policy Controls** | ✅ Complete | All policy fields implemented and enforced |
 | **Schema Discovery** | ✅ Complete | All discovery tools implemented |
 | **Dependency Analysis** | ✅ Complete | `inspect_dependencies` for impact analysis |
 | **Named Scripts** | ✅ Complete | `list_scripts`, `run_script` with governance |
-| **Tiered Packages** | ⛔ Not Started | Separate repos for reader/writer/admin |
+| **Tiered Packages** | 🚧 Partial | Reader/writer repos exist but lag server (missing pool isolation, secrets, NTLM fixes) |
 | **External Log Shipping** | ⛔ Not Started | SIEM integrations |
 
 ---
 
-*Last updated: December 4, 2025*
+*Last updated: February 17, 2026*
 
 This file is intended as a living document; as the MCP server evolves and real users adopt it, revisit the scores and priorities based on feedback, incident reports, and where teams actually spend their time.

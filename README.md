@@ -172,15 +172,17 @@ Standard username/password auth against SQL Server. Works with local instances, 
 }
 ```
 
-**Windows Authentication** (`SQL_AUTH_MODE=windows`)  
+**Windows Authentication** (`SQL_AUTH_MODE=windows`)
 NTLM-based auth using domain credentials. Ideal for on-prem SQL Server in Active Directory environments.
+
+The server auto-parses `DOMAIN\username` format — you can provide the domain either as a separate `SQL_DOMAIN` field or embedded in `SQL_USERNAME` (e.g., `CORP\svc_account`). If both are present, the explicit `SQL_DOMAIN` takes precedence and the prefix is stripped from the username.
 
 ```json
 "env": {
   "SERVER_NAME": "sqlserver.corp.local",
   "DATABASE_NAME": "mydb",
   "SQL_AUTH_MODE": "windows",
-  "SQL_USERNAME": "svc_account",
+  "SQL_USERNAME": "CORP\\svc_account",
   "SQL_PASSWORD": "YourPassword123",
   "SQL_DOMAIN": "CORP"
 }
@@ -381,8 +383,10 @@ Tools accept an optional `environment` parameter to target a specific environmen
 | `port` | number | Port (default: 1433) |
 | `authMode` | string | `sql`, `windows`, or `aad` |
 | `username` / `password` | string | Credentials (supports `${secret:NAME}` placeholders) |
-| `domain` | string | Domain for Windows auth |
+| `domain` | string | Domain for Windows auth (also auto-extracted from `DOMAIN\user` format) |
 | `trustServerCertificate` | boolean | Trust self-signed certs |
+| `connectionTimeout` | number | Connection timeout in seconds (default: 30) |
+| `requestTimeout` | number | Per-query timeout in seconds (default: 120). Increase for slow remote servers. |
 | `readonly` | boolean | Disable all write operations |
 | `tier` | string | `reader`, `writer`, or `admin` |
 | `accessLevel` | string | `database` (default) or `server` for multi-DB access |
@@ -504,7 +508,15 @@ The discovery tools (`search_schema`, `profile_table`, `inspect_relationships`) 
 
 See [ROADMAP.md](./ROADMAP.md) for the full enterprise roadmap with status tracking.
 
-**Recently shipped:**
+**Recently shipped (v0.3.x):**
+- ✅ Pluggable secret providers — `dotenv` and `file` providers join `env`; configure via `secrets.providers` in environments.json
+- ✅ Per-environment connection pools — each environment gets its own isolated `ConnectionPool` (fixes cross-environment data leaks from the old global singleton)
+- ✅ NTLM domain/username parsing — `DOMAIN\user` format auto-splits for tedious driver compatibility
+- ✅ Configurable `requestTimeout` per environment (default 120s, up from the `mssql` package's 15s default)
+- ✅ Version tracking — `test_connection` returns `mcpServerVersion` for debugging
+- ✅ `validate_environment_config` now validates secrets providers and checks resolvability of all `${secret:NAME}` references
+
+**Previously shipped:**
 - ✅ Multi-environment connection profiles with governance controls
 - ✅ Per-environment policy controls (`allowedTools`, `deniedTools`, `requireApproval`, `maxRowsDefault`)
 - ✅ Server-level access with database filtering (`accessLevel: "server"`)
@@ -517,6 +529,7 @@ See [ROADMAP.md](./ROADMAP.md) for the full enterprise roadmap with status track
 - ✅ Dependency analysis (`inspect_dependencies`) for impact assessment
 
 **Next priorities:**
+- Shared core package to eliminate drift between reader/writer/server tiers
 - MCP registry registration for discoverability
 
 ---

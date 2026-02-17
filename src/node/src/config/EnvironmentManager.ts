@@ -20,6 +20,7 @@ export interface EnvironmentConfig {
   domain?: string;
   trustServerCertificate?: boolean;
   connectionTimeout?: number;
+  requestTimeout?: number;
 
   // Governance controls
   readonly?: boolean;
@@ -292,6 +293,7 @@ export class EnvironmentManager {
       database: env.database,
       port: env.port,
       connectionTimeout: (env.connectionTimeout || 30) * 1000,
+      requestTimeout: (env.requestTimeout || 120) * 1000,
     };
 
     if (env.authMode === "sql") {

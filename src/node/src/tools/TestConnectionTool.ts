@@ -88,6 +88,7 @@ export class TestConnectionTool implements Tool {
         success: true,
         message: `Successfully connected to '${env.name}' (${env.server}/${env.database})`,
         connected: true,
+        mcpServerVersion: (params as any)?.mcpServerVersion,
         latency: {
           connectionMs: connectionTime,
           queryMs: queryTime,

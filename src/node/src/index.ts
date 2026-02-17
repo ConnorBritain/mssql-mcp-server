@@ -47,6 +47,9 @@ import { auditLogger } from "./audit/AuditLogger.js";
 import { getEnvironmentManager } from "./config/EnvironmentManager.js";
 import { initScriptManager } from "./config/ScriptManager.js";
 import * as crypto from "crypto";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const SERVER_VERSION: string = (require("../package.json") as any).version ?? "unknown";
 
 // Generate a unique session ID for this server instance
 // This allows correlation of all tool invocations within a single MCP session
@@ -870,6 +873,7 @@ function wrapToolRun(tool: { name: string; run: (...args: any[]) => Promise<any>
       environment: policy.name,
       environmentPolicy: policy,
       pool,
+      mcpServerVersion: SERVER_VERSION,
     };
 
     try {

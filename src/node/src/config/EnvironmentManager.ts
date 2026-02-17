@@ -279,6 +279,9 @@ export class EnvironmentManager {
     }
 
     const pool = new sql.ConnectionPool(config);
+    pool.on("error", (err) => {
+      console.error(`[mssql] Pool error for '${env.name}':`, err.message);
+    });
     await pool.connect();
     this.connections.set(env.name, { pool, expiresOn });
 
@@ -288,12 +291,17 @@ export class EnvironmentManager {
   private async createSqlConfig(
     env: EnvironmentConfig
   ): Promise<{ config: sql.config; expiresOn?: Date }> {
-    const baseConfig = {
+    const baseConfig: sql.config = {
       server: env.server,
       database: env.database,
       port: env.port,
       connectionTimeout: (env.connectionTimeout || 30) * 1000,
       requestTimeout: (env.requestTimeout || 120) * 1000,
+      pool: {
+        max: 10,
+        min: 0,
+        idleTimeoutMillis: 30000,
+      },
     };
 
     if (env.authMode === "sql") {

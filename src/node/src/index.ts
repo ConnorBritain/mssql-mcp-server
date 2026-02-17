@@ -780,7 +780,7 @@ runServer().catch((error) => {
   process.exit(1);
 });
 
-// Tools that are exempt from requireApproval (metadata-only, no data modification)
+// Tools that are exempt from requireApproval (read-only, no data modification)
 const APPROVAL_EXEMPT_TOOLS = new Set([
   "list_tables",
   "list_databases",
@@ -792,6 +792,9 @@ const APPROVAL_EXEMPT_TOOLS = new Set([
   "search_schema",
   "inspect_relationships",
   "inspect_dependencies",
+  "read_data",
+  "profile_table",
+  "explain_query",
 ]);
 
 // Patch all tool handlers to ensure SQL connection, policy enforcement, and audit logging

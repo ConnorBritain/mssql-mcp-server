@@ -1,5 +1,11 @@
 {
   "defaultEnvironment": "dev-local",
+  "secrets": {
+    "providers": [
+      { "type": "env" },
+      { "type": "dotenv", "path": "/home/you/.mssql-mcp-server/.env" }
+    ]
+  },
   "environments": [
     {
       "name": "client-a-sql01-admin",

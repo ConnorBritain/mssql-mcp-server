@@ -203,7 +203,7 @@ Interactive browser-based Azure AD authentication. Opens a browser window on fir
 
 #### Secret placeholders (recommended)
 
-Use `${secret:NAME}` syntax in your `environments.json` to reference environment variables:
+Use `${secret:NAME}` syntax in your `environments.json` to reference secrets:
 
 ```json
 {
@@ -214,12 +214,66 @@ Use `${secret:NAME}` syntax in your `environments.json` to reference environment
 }
 ```
 
-The server resolves these placeholders at startup by reading from environment variables. Set the corresponding env vars before launching:
+#### Pluggable secret providers
 
-```bash
-export PROD_SQL_USERNAME="myuser"
-export PROD_SQL_PASSWORD="mypassword"
+The server resolves `${secret:NAME}` placeholders through a configurable chain of providers. Add a `secrets` block to your `environments.json`:
+
+```json
+{
+  "secrets": {
+    "providers": [
+      { "type": "env" },
+      { "type": "dotenv", "path": "/absolute/path/to/.env" },
+      { "type": "file", "directory": "/absolute/path/to/secrets/" }
+    ]
+  },
+  "environments": [...]
+}
 ```
+
+Providers are tried in order — the first one to return a value wins.
+
+| Provider | Config | Description |
+|----------|--------|-------------|
+| `env` | *(none)* | Reads from `process.env`. Always available. |
+| `dotenv` | `path` (absolute) | Parses a `.env` file (key=value lines). The server reads the file directly, bypassing shell env inheritance. |
+| `file` | `directory` (absolute) | Reads a file named `NAME` from the directory. Useful for Docker secrets or mounted volumes. |
+
+If no `secrets` block is present, the server defaults to `[{ "type": "env" }]` (the original behavior).
+
+**Cross-platform `.env` setup (recommended for MCP clients):**
+
+MCP clients spawn the server as a child process, so shell profile variables (`~/.bashrc`, etc.) and Windows Credential Manager entries are often not available. The `dotenv` provider solves this:
+
+1. Create a `.env` file with your secrets:
+   ```bash
+   # Windows: C:\Users\you\.mssql-mcp-server\.env
+   # WSL/Linux: /home/you/.mssql-mcp-server/.env
+   PROD_SQL_USERNAME=myuser
+   PROD_SQL_PASSWORD=mypassword
+   ```
+
+2. Reference it in `environments.json`:
+   ```json
+   {
+     "secrets": {
+       "providers": [
+         { "type": "env" },
+         { "type": "dotenv", "path": "C:\\Users\\you\\.mssql-mcp-server\\.env" }
+       ]
+     }
+   }
+   ```
+
+3. **Keep the `.env` file out of version control** — add it to `.gitignore`.
+
+**Convenience fallback:** If you don't want to add a `secrets` block, set the `DOTENV_PATH` environment variable to the absolute path of your `.env` file. The server will automatically create a dotenv provider from it.
+
+#### Validating your setup
+
+Use the `validate_environment_config` tool to verify your secrets configuration. It checks:
+- Provider configs are valid (correct types, paths exist and are readable)
+- All `${secret:NAME}` references in your environments are resolvable
 
 #### Platform-specific secret stores
 
@@ -255,9 +309,9 @@ $env:PROD_SQL_PASSWORD = $secret
 
 | Use Case | Recommended Approach |
 |----------|---------------------|
-| Local development | `.env` file (gitignored) or inline env vars |
+| Local development | `.env` file (gitignored) with `dotenv` provider |
 | Team/corporate | Windows Credential Manager, macOS Keychain, or 1Password/Bitwarden CLI |
-| Enterprise/regulated | Azure Key Vault, HashiCorp Vault, AWS Secrets Manager |
+| Enterprise/regulated | Azure Key Vault, HashiCorp Vault, AWS Secrets Manager (Phase 2 async providers) |
 
 ### Multiple instances / Docker
 

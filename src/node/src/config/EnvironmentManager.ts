@@ -2,6 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { InteractiveBrowserCredential } from "@azure/identity";
 import sql from "mssql";
+import { SecretResolver, SecretsConfig, createSecretResolver } from "./SecretResolver.js";
 
 export type AccessLevel = "server" | "database";
 export type TierLevel = "reader" | "writer" | "admin";
@@ -45,49 +46,19 @@ export interface EnvironmentsConfig {
   defaultEnvironment?: string;
   environments: EnvironmentConfig[];
   scriptsPath?: string;  // Path to named SQL scripts directory
-}
-
-/**
- * Resolves secret placeholders in the format ${secret:NAME}
- * Currently supports environment variables; extensible for Key Vault, etc.
- */
-function resolveSecrets(value: string | undefined): string | undefined {
-  if (!value) return value;
-
-  const secretPattern = /\$\{secret:([^}]+)\}/g;
-  return value.replace(secretPattern, (match, secretName) => {
-    const envValue = process.env[secretName];
-    if (envValue === undefined) {
-      console.warn(`Secret '${secretName}' not found in environment variables`);
-      return match; // Return original placeholder if not found
-    }
-    return envValue;
-  });
-}
-
-/**
- * Recursively resolves secrets in an object's string values
- */
-function resolveSecretsInConfig<T extends Record<string, any>>(config: T): T {
-  const resolved = { ...config };
-  for (const [key, value] of Object.entries(resolved)) {
-    if (typeof value === "string") {
-      (resolved as any)[key] = resolveSecrets(value);
-    } else if (value && typeof value === "object" && !Array.isArray(value)) {
-      (resolved as any)[key] = resolveSecretsInConfig(value);
-    }
-  }
-  return resolved;
+  secrets?: SecretsConfig;  // Pluggable secret provider configuration
 }
 
 export class EnvironmentManager {
   private readonly environments: Map<string, EnvironmentConfig>;
   private defaultEnvironment?: string;
   private readonly connections: Map<string, { pool: sql.ConnectionPool; expiresOn?: Date }>;
+  private secretResolver: SecretResolver;
 
   constructor(configPath?: string) {
     this.environments = new Map();
     this.connections = new Map();
+    this.secretResolver = createSecretResolver(); // default: env-only
 
     // Try to load from config file first
     if (configPath) {
@@ -96,6 +67,10 @@ export class EnvironmentManager {
       // Fall back to environment variables for single environment
       this.loadFromEnvVars();
     }
+  }
+
+  getSecretResolver(): SecretResolver {
+    return this.secretResolver;
   }
 
   private loadFromFile(configPath: string): void {
@@ -110,11 +85,22 @@ export class EnvironmentManager {
       const configContent = fs.readFileSync(resolvedPath, "utf-8");
       const config: EnvironmentsConfig = JSON.parse(configContent);
 
+      // Build the secret resolver from config or fallback to DOTENV_PATH
+      let secretsConfig = config.secrets;
+      if (!secretsConfig) {
+        const dotenvPath = process.env.DOTENV_PATH;
+        if (dotenvPath) {
+          secretsConfig = { providers: [{ type: "env" }, { type: "dotenv", path: dotenvPath }] };
+          console.log(`Using DOTENV_PATH fallback: ${dotenvPath}`);
+        }
+      }
+      this.secretResolver = createSecretResolver(secretsConfig);
+
       this.defaultEnvironment = config.defaultEnvironment;
 
       for (const env of config.environments) {
         // Resolve any secret placeholders in the config
-        const resolvedEnv = resolveSecretsInConfig(env);
+        const resolvedEnv = this.secretResolver.resolveObject(env);
         this.environments.set(resolvedEnv.name, resolvedEnv);
       }
 

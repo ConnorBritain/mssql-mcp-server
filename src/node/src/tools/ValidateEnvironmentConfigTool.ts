@@ -1,11 +1,19 @@
+import * as fs from "fs";
+import * as path from "path";
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { getEnvironmentManager, EnvironmentConfig } from "../config/EnvironmentManager.js";
+import { getEnvironmentManager, EnvironmentConfig, EnvironmentsConfig } from "../config/EnvironmentManager.js";
+import { SecretResolver, validateDotenvPath, validateFileDirectory } from "../config/SecretResolver.js";
 
 interface ValidationResult {
   environment: string;
   valid: boolean;
   errors: string[];
   warnings: string[];
+}
+
+interface SecretsValidationResult {
+  providers: { type: string; valid: boolean; error?: string }[];
+  secrets: { name: string; resolved: boolean }[];
 }
 
 interface ValidateEnvironmentConfigResult {
@@ -17,6 +25,7 @@ interface ValidateEnvironmentConfigResult {
     warningCount: number;
   };
   results: ValidationResult[];
+  secretsValidation?: SecretsValidationResult;
   configPath?: string;
 }
 
@@ -99,6 +108,9 @@ Returns validation results for each environment with errors and warnings.`;
     const invalidCount = results.filter((r) => !r.valid).length;
     const warningCount = results.filter((r) => r.warnings.length > 0).length;
 
+    // Validate secrets configuration and resolution
+    const secretsValidation = this.validateSecrets(envManager, toValidate);
+
     return {
       success: invalidCount === 0,
       summary: {
@@ -108,6 +120,7 @@ Returns validation results for each environment with errors and warnings.`;
         warningCount,
       },
       results,
+      secretsValidation,
       configPath: process.env.ENVIRONMENTS_CONFIG_PATH,
     };
   }
@@ -289,5 +302,96 @@ Returns validation results for each environment with errors and warnings.`;
       errors,
       warnings,
     };
+  }
+
+  private validateSecrets(
+    envManager: ReturnType<typeof getEnvironmentManager>,
+    environments: EnvironmentConfig[]
+  ): SecretsValidationResult {
+    const resolver = envManager.getSecretResolver();
+
+    // Validate provider configs by reading the raw config file
+    const providerResults = this.validateSecretsProviders();
+
+    // Extract all ${secret:NAME} references from the raw config
+    const configPath = process.env.ENVIRONMENTS_CONFIG_PATH;
+    const allSecretNames = new Set<string>();
+
+    if (configPath) {
+      try {
+        const rawContent = fs.readFileSync(configPath, "utf-8");
+        for (const name of SecretResolver.extractSecretNames(rawContent)) {
+          allSecretNames.add(name);
+        }
+      } catch {
+        // If we can't read the file, fall back to checking the resolved environments
+      }
+    }
+
+    // Also scan from the environment objects (in case loaded from env vars)
+    if (allSecretNames.size === 0) {
+      for (const env of environments) {
+        const json = JSON.stringify(env);
+        for (const name of SecretResolver.extractSecretNames(json)) {
+          allSecretNames.add(name);
+        }
+      }
+    }
+
+    const { resolved, unresolved } = resolver.checkResolvability(Array.from(allSecretNames));
+
+    const secrets = [
+      ...resolved.map((name) => ({ name, resolved: true })),
+      ...unresolved.map((name) => ({ name, resolved: false })),
+    ];
+
+    return { providers: providerResults, secrets };
+  }
+
+  private validateSecretsProviders(): { type: string; valid: boolean; error?: string }[] {
+    const configPath = process.env.ENVIRONMENTS_CONFIG_PATH;
+    if (!configPath) return [];
+
+    try {
+      const rawContent = fs.readFileSync(configPath, "utf-8");
+      const config: EnvironmentsConfig = JSON.parse(rawContent);
+      if (!config.secrets?.providers) return [];
+
+      const validTypes = ["env", "dotenv", "file"];
+      const results: { type: string; valid: boolean; error?: string }[] = [];
+
+      for (const provider of config.secrets.providers) {
+        if (!validTypes.includes(provider.type)) {
+          results.push({ type: provider.type, valid: false, error: `Unknown provider type '${provider.type}'. Valid types: ${validTypes.join(", ")}` });
+          continue;
+        }
+
+        if (provider.type === "env") {
+          results.push({ type: "env", valid: true });
+        } else if (provider.type === "dotenv") {
+          if (!provider.path) {
+            results.push({ type: "dotenv", valid: false, error: "Missing required 'path' field" });
+          } else if (!path.isAbsolute(provider.path)) {
+            results.push({ type: "dotenv", valid: false, error: `Path should be absolute: ${provider.path}` });
+          } else {
+            const check = validateDotenvPath(provider.path);
+            results.push({ type: "dotenv", valid: check.valid, error: check.error });
+          }
+        } else if (provider.type === "file") {
+          if (!provider.directory) {
+            results.push({ type: "file", valid: false, error: "Missing required 'directory' field" });
+          } else if (!path.isAbsolute(provider.directory)) {
+            results.push({ type: "file", valid: false, error: `Directory should be absolute: ${provider.directory}` });
+          } else {
+            const check = validateFileDirectory(provider.directory);
+            results.push({ type: "file", valid: check.valid, error: check.error });
+          }
+        }
+      }
+
+      return results;
+    } catch {
+      return [];
+    }
   }
 }

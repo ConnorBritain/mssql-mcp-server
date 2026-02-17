@@ -319,6 +319,18 @@ export class EnvironmentManager {
         );
       }
 
+      // Strip DOMAIN\ prefix from username if present — tedious NTLM expects
+      // the username and domain as separate fields
+      let ntlmUser = env.username;
+      let ntlmDomain = env.domain || "";
+      const backslashIndex = ntlmUser.indexOf("\\");
+      if (backslashIndex !== -1) {
+        if (!ntlmDomain) {
+          ntlmDomain = ntlmUser.substring(0, backslashIndex);
+        }
+        ntlmUser = ntlmUser.substring(backslashIndex + 1);
+      }
+
       return {
         config: {
           ...baseConfig,
@@ -329,9 +341,9 @@ export class EnvironmentManager {
           authentication: {
             type: "ntlm",
             options: {
-              userName: env.username,
+              userName: ntlmUser,
               password: env.password,
-              domain: env.domain || "",
+              domain: ntlmDomain,
             },
           },
         },

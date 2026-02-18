@@ -46,15 +46,15 @@ This document outlines the strategic approach to credential security, tiered aut
   - `load-from-keyvault.ps1`
   - `load-from-credential-manager.ps1`
 
-**Phase 2 (v0.3.x):** Native secret provider support
-- [ ] Add `SECRETS_PROVIDER` env var (`none`, `env`, `credman`, `keyvault`, `vault`)
-- [ ] Implement pluggable secret resolver in `src/node/src/config/`
+**Phase 2 (v0.3.x):** Native secret provider support ✅ Complete
+- [x] Pluggable `SecretResolver` with configurable provider chain ✅ **Implemented**
+- [x] Providers: `env`, `dotenv`, `file`, Azure Key Vault, AWS Secrets Manager, HashiCorp Vault ✅ **Implemented (core v0.2.0)**
 - [x] Auto-resolve `${secret:NAME}` syntax in config values ✅ **Implemented**
 
-**Phase 3 (v0.4.x):** Credential rotation & refresh
+**Phase 3 (v0.4.x):** Credential rotation & refresh ✅ Complete
 - [x] Token refresh for Azure AD connections ✅ (EnvironmentManager handles token expiry)
-- [ ] Secret TTL awareness (re-fetch from vault if expired)
-- [ ] Graceful reconnection on credential change
+- [x] Secret TTL awareness (`ttlSeconds` config, automatic background refresh) ✅ **Implemented (core v0.2.0)**
+- [x] Graceful reconnection on credential change ✅ **Implemented** (stale pool invalidation on secret refresh)
 
 ---
 
@@ -68,9 +68,9 @@ Current `READONLY=true` is runtime-only—the code for write operations still sh
 
 | Tier | npm Package | Tools Included | Use Case |
 |------|-------------|----------------|----------|
-| **Reader** | `@connorbritain/mssql-mcp-reader` | `read_data`, `describe_table`, `list_table`, `search_schema`, `profile_table`, `inspect_relationships`, `explain_query` | Analysts, auditors, read-only exploration |
-| **Standard** | `@connorbritain/mssql-mcp-server` | All Reader tools + `insert_data`, `update_data`, `delete_data` (with preview/confirm) | Data engineers, ETL developers |
-| **Admin** | `@connorbritain/mssql-mcp-admin` | All Standard tools + `create_table`, `create_index`, `drop_table` | DBAs, schema architects |
+| **Reader** | `@connorbritain/mssql-mcp-reader` | 14 read-only tools (read_data, describe_table, list_tables, search_schema, profile_table, inspect_relationships, inspect_dependencies, explain_query, list_databases, list_environments, validate_environment_config, test_connection, list_scripts, run_script) | Analysts, auditors, read-only exploration |
+| **Writer** | `@connorbritain/mssql-mcp-writer` | All Reader tools + `insert_data`, `update_data`, `delete_data` (with preview/confirm) | Data engineers, ETL developers |
+| **Admin** | `@connorbritain/mssql-mcp-server` | All Writer tools + `create_table`, `create_index`, `drop_table` | DBAs, schema architects |
 
 ### Implementation Strategy
 
@@ -311,15 +311,16 @@ Best for: Regulated industries requiring code signing
 
 ## 6. Priority Matrix
 
-| Feature | Impact | Effort | Priority |
-|---------|--------|--------|----------|
-| Credential security docs | High | Low | **P0 - Next release** |
-| Tiered tool builds | High | Medium | **P1 - v0.3.x** |
-| Per-environment policies | High | Medium | **P1 - v0.3.x** |
-| Secret provider plugins | Medium | Medium | P2 - v0.4.x |
-| Signed releases | Medium | Low | P2 - v0.4.x |
-| External log shipping | Medium | Medium | P3 - v0.5.x |
-| Container distribution | Low | Low | P3 - v0.5.x |
+| Feature | Impact | Effort | Priority | Status |
+|---------|--------|--------|----------|--------|
+| Credential security docs | High | Low | **P0** | ✅ Done |
+| Tiered tool builds | High | Medium | **P1** | ✅ Done |
+| Per-environment policies | High | Medium | **P1** | ✅ Done |
+| Secret provider plugins | Medium | Medium | **P2** | ✅ Done |
+| Config builder UI | Medium | Medium | **P2** | ✅ Done |
+| Signed releases | Medium | Low | P3 | ⛔ Not started |
+| External log shipping | Medium | Medium | P3 | ⛔ Not started |
+| Container distribution | Low | Low | P4 | ⛔ Not started |
 
 ---
 
@@ -330,12 +331,12 @@ Best for: Regulated industries requiring code signing
    - [x] Create `examples/` folder with loader scripts ✅
 
 2. **Short-term (v0.3.x):** ✅ Complete
-   - [x] Create `mssql-mcp-reader` repo ✅ — thin wrapper on `mssql-mcp-core` (v0.3.0)
-   - [x] Create `mssql-mcp-writer` repo ✅ — thin wrapper on `mssql-mcp-core` (v0.3.0)
-   - [ ] Publish all three packages to npm — reader/writer pending; server published
+   - [x] Create `mssql-mcp-reader` repo ✅ — thin wrapper on `mssql-mcp-core`
+   - [x] Create `mssql-mcp-writer` repo ✅ — thin wrapper on `mssql-mcp-core`
+   - [x] Publish all three packages to npm ✅ — all registered on MCP Registry
 
-3. **Medium-term (v0.4.x):**
-   - [ ] Implement `SECRETS_PROVIDER` pluggable system
+3. **Medium-term (v0.4.x):** ✅ Complete
+   - [x] Implement pluggable secret provider system ✅ **Implemented (core v0.2.0)**
    - [x] Add per-environment `allowedTools` enforcement ✅ **Implemented**
    - [ ] Create signed release workflow
 
@@ -347,7 +348,8 @@ Best for: Regulated industries requiring code signing
 |----------|---------|--------|
 | **Credentials** | `${secret:NAME}` resolution | ✅ |
 | **Credentials** | Docs & example scripts | ✅ |
-| **Credentials** | Pluggable providers | ❌ |
+| **Credentials** | Pluggable providers (env, dotenv, file, Azure KV, AWS SM, HC Vault) | ✅ |
+| **Credentials** | Secret TTL / credential rotation | ✅ |
 | **Policies** | `allowedTools` / `deniedTools` | ✅ |
 | **Policies** | `allowedSchemas` / `deniedSchemas` | ✅ |
 | **Policies** | `maxRowsDefault` enforcement | ✅ |

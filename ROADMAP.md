@@ -13,9 +13,9 @@ Scoring legend:
 
 ---
 
-## Architecture Milestone: Core Extraction Complete (v0.4.5)
+## Architecture Milestone: Core Extraction Complete (v0.5.0)
 
-As of February 2026, all shared logic has been extracted into **`mssql-mcp-core` (v0.1.5)**, a dedicated shared library. The three tier packages are now thin wrappers (~12 lines each) that call `startMcpServer({ tier })`.
+As of February 2026, all shared logic has been extracted into **`mssql-mcp-core` (v0.2.0)**, a dedicated shared library. The three tier packages are now thin wrappers (~12 lines each) that call `startMcpServer({ tier })`.
 
 **4-repo architecture:**
 
@@ -65,9 +65,10 @@ This provides the compile-time tier guarantees described in the Governance Roadm
   - ✅ Provider chain configured via `secrets.providers` in environments.json; first match wins.
   - ✅ `DOTENV_PATH` env var fallback for zero-config .env support.
   - ✅ `validate_environment_config` validates provider configs and reports unresolvable secrets.
-  - 🚧 Phase 2 async providers (Azure Key Vault, AWS Secrets Manager) planned.
+  - ✅ Async vault providers: Azure Key Vault, AWS Secrets Manager, HashiCorp Vault (core v0.2.0).
+  - ✅ Secret TTL / credential rotation with automatic background refresh and stale pool invalidation (core v0.2.0).
   - ✅ Clear guidance/README on NOT checking secrets into the repo.
-- **Score**: V=5, C=3, F=4, M=5 → **Overall Priority: P0** ✅ **Complete (Phase 1)**
+- **Score**: V=5, C=3, F=4, M=5 → **Overall Priority: P0** ✅ **Complete**
 
 ### 1.4. Basic Audit Logging (Per Command)
 
@@ -189,12 +190,13 @@ This provides the compile-time tier guarantees described in the Governance Roadm
 
 - **Description**: More structured, configurable logging of all DB interactions with field redaction.
 - **Why**: Compliance (HIPAA, SOC 2, etc.) plus easier incident reviews.
-- **Status**: ⛔ Not started – beyond console logging, there is no structured log format, masking, or external sink support today.
+- **Status**: ✅ Implemented – AuditLogger writes JSON Lines format with structured fields (timestamp, sessionId, environment, tool, arguments, result status, duration). Sensitive parameters are auto-redacted. Per-environment `auditLevel` (none/basic/verbose) controls verbosity.
 - **Key capabilities**:
-  - Structured log format (JSON) with fields: user, environment, tool, SQL, duration, row count.
-  - Configurable masking for sensitive columns/parameters (PHI/PII).
-  - Pluggable sinks (file, stdout, HTTP endpoint, cloud log services).
-- **Score**: V=4, C=4, F=4, M=5 → **Overall Priority: P2**
+  - ✅ Structured log format (JSON Lines) with fields: timestamp, sessionId, environment, tool, arguments, result status, duration, row count.
+  - ✅ Automatic redaction of sensitive parameters (passwords, secrets).
+  - ✅ Per-environment audit levels (none/basic/verbose).
+  - 🚧 Pluggable sinks (file implemented; syslog, HTTP, Azure Monitor, CloudWatch planned — config builder UI ready).
+- **Score**: V=4, C=4, F=4, M=5 → **Overall Priority: P2** ✅ **Complete (Phase 1)**
 
 ### 4.2. Session / Change History Views
 
@@ -281,11 +283,11 @@ This provides the compile-time tier guarantees described in the Governance Roadm
 
 - **Description**: Tools for verifying that environments are configured correctly and reachable.
 - **Why**: Faster setup/onboarding; avoids confusing runtime errors. High leverage when juggling many client databases because you can validate reachability before running real queries.
-- **Status**: 🚧 Partially implemented – `test_connection` verifies connectivity, latency, and server metadata per environment (@MssqlMcp/Node/src/tools/TestConnectionTool.ts, @MssqlMcp/Node/src/index.ts#542-576). Still missing: broader config validation and automated diagnostics.
+- **Status**: ✅ Implemented – `test_connection` verifies connectivity, latency, and server metadata. `validate_environment_config` checks config structure, provider health, and secret resolvability.
 - **Key capabilities**:
-  - ⛔ `validate_environment_config` tool.
-  - ✅ `test_connection(environment)` that runs a simple query and returns latency + status.
-- **Score**: V=4, C=3, F=5, M=5 → **Overall Priority: P1**
+  - ✅ `validate_environment_config` tool — validates config schema, provider configs, and reports unresolvable secrets.
+  - ✅ `test_connection(environment)` — runs a simple query and returns latency + status.
+- **Score**: V=4, C=3, F=5, M=5 → **Overall Priority: P1** ✅ **Complete**
 
 ### 7.2. Example Workflows / Playbooks
 
@@ -318,12 +320,17 @@ This provides the compile-time tier guarantees described in the Governance Roadm
    - ✅ Enhanced/structured audit logging + redaction with per-environment audit levels.
    - ✅ Dependency/reference tooling – `inspect_dependencies` for full impact analysis.
    - ✅ Per-client scoping + policy controls (`allowedTools`, `deniedTools`, `allowedSchemas`, `deniedSchemas`, `requireApproval`).
+   - ✅ Pluggable vault providers: Azure Key Vault, AWS Secrets Manager, HashiCorp Vault (core v0.2.0).
+   - ✅ Secret TTL / credential rotation with automatic background refresh (core v0.2.0).
+   - ✅ Visual config builder with simple/advanced modes ([mssql-mcp-config-builder](https://github.com/ConnorBritain/mssql-mcp-config-builder)).
    - ⛔ Example workflows/playbooks to codify complex operations.
 
 4. **P3 – Longer-Term & Analytics**
+   - ⛔ External log shipping: Syslog, Azure Monitor, Splunk, CloudWatch (core).
    - ⛔ Schema drift/version awareness.
    - ⛔ Session/change-history explorers built atop structured logs.
    - ⛔ Deeper multi-tenant policy automation.
+   - ⛔ Transactional writes: BEGIN TRAN → preview → COMMIT/ROLLBACK (core).
 
 5. **P4 – Remote Access & Enterprise Deployment**
    - ⛔ Remote MCP proxy pattern for bastion/jump host scenarios.
@@ -387,7 +394,10 @@ This could evolve into a **centralized MCP management platform** - a potential p
 | **Schema Discovery** | ✅ Complete | All discovery tools implemented |
 | **Dependency Analysis** | ✅ Complete | `inspect_dependencies` for impact analysis |
 | **Named Scripts** | ✅ Complete | `list_scripts`, `run_script` with governance |
-| **Tiered Packages** | ✅ Complete | Core-based architecture: `mssql-mcp-core` (v0.1.5) contains all shared code; reader, writer, and server are thin wrappers calling `startMcpServer({ tier })` |
+| **Secrets / Vault** | ✅ Complete | Pluggable providers (env, dotenv, file, Azure Key Vault, AWS Secrets Manager, HashiCorp Vault) with TTL-based refresh |
+| **Config Validation** | ✅ Complete | `validate_environment_config` + `test_connection` |
+| **Tiered Packages** | ✅ Complete | Core-based architecture: `mssql-mcp-core` (v0.2.0) contains all shared code; reader, writer, and server are thin wrappers calling `startMcpServer({ tier })` |
+| **Config Builder** | ✅ Complete | Visual wizard at [mssql-mcp-config-builder](https://github.com/ConnorBritain/mssql-mcp-config-builder) — simple/advanced modes, generates both MCP and environment configs |
 | **External Log Shipping** | ⛔ Not Started | SIEM integrations — belongs in `mssql-mcp-core` |
 
 ---

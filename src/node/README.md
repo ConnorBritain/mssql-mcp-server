@@ -25,6 +25,8 @@ Production-ready MCP server with 20 tools for schema discovery, data operations,
 | **Scripts** | `list_scripts`, `run_script` |
 | **Operations** | `test_connection`, `validate_environment_config` |
 
+**[Config Builder](https://connorbritain.github.io/mssql-mcp-config-builder/)** — Visual wizard to generate your `mcp_config.json` and `environments.json` files.
+
 ## Install
 
 ```bash

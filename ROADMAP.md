@@ -13,6 +13,23 @@ Scoring legend:
 
 ---
 
+## Architecture Milestone: Core Extraction Complete (v0.4.5)
+
+As of February 2026, all shared logic has been extracted into **`mssql-mcp-core` (v0.1.5)**, a dedicated shared library. The three tier packages are now thin wrappers (~12 lines each) that call `startMcpServer({ tier })`.
+
+**4-repo architecture:**
+
+| Repo | npm Package | Role |
+|------|-------------|------|
+| `mssql-mcp-core` | `@connorbritain/mssql-mcp-core` | All tools, EnvironmentManager, AuditLogger, SecretResolver, IntentRouter, wrapToolRun, createMcpServer, toolsets |
+| `mssql-mcp-reader` | `@connorbritain/mssql-mcp-reader` | Thin wrapper — `startMcpServer({ tier: "reader" })` |
+| `mssql-mcp-writer` | `@connorbritain/mssql-mcp-writer` | Thin wrapper — `startMcpServer({ tier: "writer" })` |
+| `mssql-mcp-server` | `@connorbritain/mssql-mcp-server` | Thin wrapper — `startMcpServer({ tier: "admin" })` |
+
+This provides the compile-time tier guarantees described in the Governance Roadmap while keeping all logic in one maintained codebase. Remaining work items below are annotated with which repo they belong to.
+
+---
+
 ## 1. Core, Safe Querying & Connection Management (Top Priority)
 
 ### 1.1. Environment / Connection Profiles
@@ -157,12 +174,12 @@ Scoring legend:
 
 - **Description**: Opinionated docs + scripts for running the MCP server locally, containerized, or on bastion/jump hosts that can reach production SQL.
 - **Why**: Reduces friction in adopting the server in enterprise networks; replaces the "RDP + SSMS" ritual with a documented MCP deployment.
-- **Status**: 🚧 Partially documented – README covers local install/build flow and MCP client config, but lacks prescriptive deployment topologies, firewall/identity callouts, or bastion examples (@README.md#43-147).
+- **Status**: ✅ Implemented – `DEPLOYMENT.md` covers five deployment patterns (direct, VPN, SSH tunnel, jump host, Docker/container), systemd service setup, security hardening checklist, multi-client fleet topology, and troubleshooting guide.
 - **Key capabilities**:
-  - Reference architectures: local (VPN), container, jump host, managed service.
-  - Security guidance (ports, SSL, credential scope, service accounts).
-  - Optional scripts/manifests (e.g., systemd unit, container compose).
-- **Score**: V=4, C=2, F=5, M=5 → **Overall Priority: P1**
+  - ✅ Reference architectures: local (VPN), container, jump host, managed service.
+  - ✅ Security guidance (ports, SSL, credential scope, service accounts).
+  - ✅ Optional scripts/manifests (systemd unit, Dockerfile, Docker Compose).
+- **Score**: V=4, C=2, F=5, M=5 → **Overall Priority: P1** ✅ **Complete**
 
 ---
 
@@ -293,7 +310,7 @@ Scoring legend:
 2. **P1 – Safety & Operations Enablement** ✅ **COMPLETE**
    - ✅ Safe-update guardrails – preview + confirmation for `update_data`/`delete_data`.
    - ✅ Named/template scripts – `list_scripts` and `run_script` tools with full governance.
-   - 🚧 Deployment & bastion patterns – finish the doc set/systemd examples so teams can adopt without guesswork.
+   - ✅ Deployment & bastion patterns – `DEPLOYMENT.md` with five patterns, systemd, Docker, security checklist. *(Docs belong in `mssql-mcp-server`)*
    - ✅ Configuration validation & `test_connection` – quick reachability checks.
 
 3. **P2 – Advanced Enterprise Controls** ✅ **COMPLETE**
@@ -370,11 +387,11 @@ This could evolve into a **centralized MCP management platform** - a potential p
 | **Schema Discovery** | ✅ Complete | All discovery tools implemented |
 | **Dependency Analysis** | ✅ Complete | `inspect_dependencies` for impact analysis |
 | **Named Scripts** | ✅ Complete | `list_scripts`, `run_script` with governance |
-| **Tiered Packages** | 🚧 Partial | Reader/writer repos exist but lag server (missing pool isolation, secrets, NTLM fixes) |
-| **External Log Shipping** | ⛔ Not Started | SIEM integrations |
+| **Tiered Packages** | ✅ Complete | Core-based architecture: `mssql-mcp-core` (v0.1.5) contains all shared code; reader, writer, and server are thin wrappers calling `startMcpServer({ tier })` |
+| **External Log Shipping** | ⛔ Not Started | SIEM integrations — belongs in `mssql-mcp-core` |
 
 ---
 
-*Last updated: February 17, 2026*
+*Last updated: February 18, 2026*
 
 This file is intended as a living document; as the MCP server evolves and real users adopt it, revisit the scores and priorities based on feedback, incident reports, and where teams actually spend their time.

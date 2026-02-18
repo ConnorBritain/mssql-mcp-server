@@ -504,6 +504,16 @@ The discovery tools (`search_schema`, `profile_table`, `inspect_relationships`) 
 
 ---
 
+## Deployment
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for enterprise deployment patterns including:
+- Network topologies (direct, VPN, SSH tunnel, jump host, container)
+- Docker / Docker Compose examples
+- systemd service setup
+- Security hardening checklist
+- Multi-client fleet configuration
+- Troubleshooting common connection issues
+
 ## Roadmap
 
 See [ROADMAP.md](./ROADMAP.md) for the full enterprise roadmap with status tracking.
@@ -528,9 +538,14 @@ See [ROADMAP.md](./ROADMAP.md) for the full enterprise roadmap with status track
 - ✅ Named SQL scripts (`list_scripts`, `run_script`) with full governance
 - ✅ Dependency analysis (`inspect_dependencies`) for impact assessment
 
+**Recently completed:**
+- ✅ Shared core package (`@connorbritain/mssql-mcp-core`) — all three tiers are thin wrappers
+- ✅ MCP Registry registration for all three packages
+- ✅ Deployment & bastion pattern documentation
+
 **Next priorities:**
-- Shared core package to eliminate drift between reader/writer/server tiers
-- MCP registry registration for discoverability
+- Pluggable secret providers (Azure Key Vault, AWS Secrets Manager)
+- External log shipping (Syslog, Azure Monitor, Splunk)
 
 ---
 

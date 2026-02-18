@@ -1,78 +1,17 @@
 {
-  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-10-17/server.schema.json",
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.ConnorBritain/mssql",
-  "description": "MCP server for Microsoft SQL Server - schema discovery, profiling, and safe data operations",
-  "repository": {
-    "url": "https://github.com/ConnorBritain/mssql-mcp-server",
-    "source": "github"
-  },
-  "version": "0.1.2",
+  "description": "MCP server for Microsoft SQL Server — schema discovery, profiling, safe writes, and DDL",
+  "version": "0.4.5",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@connorbritain/mssql-mcp-server",
-      "version": "0.1.2",
+      "version": "0.4.5",
+      "runtimeHint": "node",
       "transport": {
         "type": "stdio"
-      },
-      "environmentVariables": [
-        {
-          "name": "SERVER_NAME",
-          "description": "SQL Server hostname or IP address",
-          "isRequired": true,
-          "format": "string",
-          "isSecret": false
-        },
-        {
-          "name": "DATABASE_NAME",
-          "description": "Target database name",
-          "isRequired": true,
-          "format": "string",
-          "isSecret": false
-        },
-        {
-          "name": "SQL_AUTH_MODE",
-          "description": "Authentication mode: sql, windows, or aad",
-          "isRequired": false,
-          "format": "string",
-          "isSecret": false
-        },
-        {
-          "name": "SQL_USERNAME",
-          "description": "Username for SQL or Windows auth",
-          "isRequired": false,
-          "format": "string",
-          "isSecret": false
-        },
-        {
-          "name": "SQL_PASSWORD",
-          "description": "Password for SQL or Windows auth",
-          "isRequired": false,
-          "format": "string",
-          "isSecret": true
-        },
-        {
-          "name": "SQL_PORT",
-          "description": "SQL Server port (default: 1433)",
-          "isRequired": false,
-          "format": "string",
-          "isSecret": false
-        },
-        {
-          "name": "TRUST_SERVER_CERTIFICATE",
-          "description": "Set true for self-signed certs",
-          "isRequired": false,
-          "format": "string",
-          "isSecret": false
-        },
-        {
-          "name": "READONLY",
-          "description": "Set true to disable write operations",
-          "isRequired": false,
-          "format": "string",
-          "isSecret": false
-        }
-      ]
+      }
     }
   ]
 }

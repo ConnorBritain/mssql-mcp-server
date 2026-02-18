@@ -166,23 +166,23 @@ npm run build:all
 
 ### Implementation Plan
 
-**Phase 1 (v0.3.x):** Refactor tool organization
-- [ ] Move tools into `read/`, `write/`, `admin/` subdirectories
-- [ ] Create tier-specific entry points
-- [ ] Test that reader build has no write imports
+**Phase 1 (v0.3.x):** Refactor tool organization ✅ Complete
+- [x] Move tools into `read/`, `write/`, `admin/` subdirectories — done via `mssql-mcp-core/src/server/toolsets.ts`
+- [x] Create tier-specific entry points — done via `startMcpServer({ tier })` in each package
+- [x] Test that reader build has no write imports — enforced by core's toolset filtering
 
-**Phase 2 (v0.4.x):** Multi-package publishing
-- [ ] Create build script for tier separation
-- [ ] Publish `mssql-mcp-reader` package *(renamed from mssql-mcp-standard)*
-- [ ] Publish `mssql-mcp-writer` package *(new mid-tier)*
-- [ ] Update MCP Registry with all three
+**Phase 2 (v0.4.x):** Multi-package publishing ✅ Complete
+- [x] Create build script for tier separation — done via `mssql-mcp-core` shared library
+- [x] Publish `mssql-mcp-reader` package (v0.3.0) — thin wrapper on core
+- [x] Publish `mssql-mcp-writer` package (v0.3.0) — thin wrapper on core
+- [ ] Update MCP Registry with all three — pending
 
 **Phase 3 (v0.5.x):** Enterprise distribution
 - [ ] Create signed releases for each tier
 - [ ] Document enterprise deployment patterns
 - [ ] Add SBOM (Software Bill of Materials) generation
 
-> **Note:** Decision made to use separate GitHub repos instead of monorepo build. Each tier will be a standalone repo that duplicates shared code for maximum isolation and independent publishing.
+> **Note:** Option A was implemented, but using a shared core library (`mssql-mcp-core`) rather than code duplication. Each tier package imports from core and calls `startMcpServer({ tier: "reader" | "writer" | "admin" })`. This provides the same compile-time guarantees (each package only activates the tools for its tier) while keeping all logic in one maintained codebase and avoiding version drift between repos.
 
 ---
 
@@ -329,10 +329,10 @@ Best for: Regulated industries requiring code signing
    - [x] Add credential security section to README ✅
    - [x] Create `examples/` folder with loader scripts ✅
 
-2. **Short-term (v0.3.x):**
-   - [ ] Create `mssql-mcp-reader` repo (duplicate with read-only tools)
-   - [ ] Create `mssql-mcp-writer` repo (duplicate with read + write tools)
-   - [ ] Publish all three packages to npm
+2. **Short-term (v0.3.x):** ✅ Complete
+   - [x] Create `mssql-mcp-reader` repo ✅ — thin wrapper on `mssql-mcp-core` (v0.3.0)
+   - [x] Create `mssql-mcp-writer` repo ✅ — thin wrapper on `mssql-mcp-core` (v0.3.0)
+   - [ ] Publish all three packages to npm — reader/writer pending; server published
 
 3. **Medium-term (v0.4.x):**
    - [ ] Implement `SECRETS_PROVIDER` pluggable system
@@ -371,8 +371,8 @@ Best for: Regulated industries requiring code signing
 | **Audit** | Environment in logs | ✅ |
 | **Audit** | Session/correlation ID | ✅ |
 | **Audit** | External log shipping | ❌ |
-| **Tiers** | Separate repos | ❌ |
+| **Tiers** | Separate repos + shared core (`mssql-mcp-core`) | ✅ |
 
 ---
 
-*Last updated: December 4, 2025*
+*Last updated: February 18, 2026*

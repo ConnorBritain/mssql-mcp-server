@@ -15,3 +15,12 @@ Please do **not** open public GitHub issues for security findings. You’ll rece
 ### Disclosure
 
 We follow responsible disclosure practices. Once a fix is available, we’ll credit researchers in the release notes unless anonymity is requested.
+
+### Hardening recommendations
+
+The write, transaction, and DDL tools execute data and schema changes by design. To reduce their blast radius when you deploy them:
+
+- Run the MCP server under a **least-privilege SQL login**, scoped to only the databases, schemas, and operations it needs.
+- Ensure `xp_cmdshell` and other dangerous server features are **disabled** (they are off by default in modern SQL Server).
+- Use the **reader** package — or set `READONLY=true` — anywhere writes are not required.
+- Treat tool arguments originating from an LLM agent as **untrusted input**, and restrict which MCP clients can invoke the write tools.

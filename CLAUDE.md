@@ -32,8 +32,8 @@ For tool implementations, see `mssql-mcp-core/src/tools/`. For server setup logi
 
 ## Current Implementation Status
 
-- **Version:** v0.4.5
-- **Core dependency:** `@connorbritain/mssql-mcp-core` v0.1.5
+- **Version:** v0.6.0
+- **Core dependency:** `@connorbritain/mssql-mcp-core` ^0.6.0
 - **Tier:** `admin` — all tools enabled (read, write, and DDL)
 
 ## Build Commands
@@ -113,9 +113,11 @@ This package activates all tools (admin tier):
 
 ## Safety Features (implemented in `mssql-mcp-core`)
 
+- All write/DDL/transaction tools validate and bracket-quote identifiers (table/column/index/schema names) via a shared allowlist (`mssql-mcp-core/src/security/sqlIdentifier.ts`) — table/column names are never string-interpolated
+- `update_data`/`delete_data`/`execute_transaction` target rows via structured, parameterized filters (`{ column, operator, value }`) — there is no raw `whereClause` (`mssql-mcp-core/src/security/whereFilter.ts`)
 - `ReadDataTool` validates all queries: must start with SELECT, blocks dangerous keywords
 - Automatic `TOP n` injection for queries without limits (`MAX_ROWS_DEFAULT`)
-- `update_data` and `delete_data` require explicit confirmation flags
+- `update_data` and `delete_data` require explicit confirmation flags (a usability guard, not an injection control)
 - Audit logging with automatic sensitive data redaction (`mssql-mcp-core/src/audit/AuditLogger.ts`)
 - Per-environment readonly and allowedTools policies (`mssql-mcp-core/src/server/wrapToolRun.ts`)
 - Schema-level access control with wildcard patterns

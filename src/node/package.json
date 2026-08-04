@@ -1,7 +1,7 @@
 {
   "name": "@connorbritain/mssql-mcp-server",
   "mcpName": "io.github.ConnorBritain/mssql",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Model Context Protocol (MCP) server for Microsoft SQL Server - enterprise-ready schema discovery, profiling, and safe data operations",
   "keywords": [
     "mcp",
@@ -43,7 +43,7 @@
     "typescript": "^5.4.5"
   },
   "dependencies": {
-    "@connorbritain/mssql-mcp-core": "^0.6.0"
+    "@connorbritain/mssql-mcp-core": "^0.7.0"
   },
   "type": "module"
 }

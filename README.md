@@ -392,7 +392,8 @@ Tools accept an optional `environment` parameter to target a specific environmen
 | `accessLevel` | string | `database` (default) or `server` for multi-DB access |
 | `allowedDatabases` / `deniedDatabases` | string[] | Filter databases for server-level access |
 | `allowedTools` / `deniedTools` | string[] | Whitelist/blacklist specific tools |
-| `allowedSchemas` / `deniedSchemas` | string[] | Schema patterns (supports wildcards like `dbo.*`) |
+| `allowedSchemas` / `deniedSchemas` | string[] | Schema/table patterns (supports wildcards like `dbo.*`) |
+| `allowedColumns` / `deniedColumns` | object | Table-pattern keys mapped to column arrays; denied columns take precedence |
 | `maxRowsDefault` | number | Cap query results (overrides user requests) |
 | `requireApproval` | boolean | Force confirmation for all non-metadata operations |
 | `auditLevel` | string | `none`, `basic`, or `verbose` |

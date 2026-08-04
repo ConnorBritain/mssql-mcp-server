@@ -42,6 +42,12 @@
       "readonly": true,
       "allowedTools": ["read_data", "list_tables", "describe_table", "search_schema", "profile_table", "inspect_relationships", "explain_query"],
       "deniedSchemas": ["audit.*", "security.*", "*.credentials*"],
+      "allowedColumns": {
+        "dbo.Customers": ["CustomerId", "Name", "Status"]
+      },
+      "deniedColumns": {
+        "dbo.Customers": ["Email", "SSN"]
+      },
       "maxRowsDefault": 500,
       "auditLevel": "basic",
       "tier": "reader"

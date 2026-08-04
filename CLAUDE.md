@@ -120,7 +120,8 @@ This package activates all tools (admin tier):
 - `update_data` and `delete_data` require explicit confirmation flags (a usability guard, not an injection control)
 - Audit logging with automatic sensitive data redaction (`mssql-mcp-core/src/audit/AuditLogger.ts`)
 - Per-environment readonly and allowedTools policies (`mssql-mcp-core/src/server/wrapToolRun.ts`)
-- Schema-level access control with wildcard patterns
+- Schema/table-level access control with wildcard patterns
+- Column-level allow/deny policies with parser-backed read enforcement; denied columns take precedence
 - `requireApproval` enforcement for sensitive operations
 - Secret placeholder resolution via `mssql-mcp-core/src/config/SecretResolver.ts`
 
